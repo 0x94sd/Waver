@@ -1,6 +1,7 @@
 import httpx
 from rich.console import Console
 from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn
+
 Console = Console()
 
 vague = r"""
@@ -13,7 +14,7 @@ vague = r"""
   ▒ ░ ░    ▒   ▒▒ ░░ ░░   ░ ░  ░  ░▒ ░ ▒░
   ░   ░    ░   ▒     ░░     ░     ░░   ░ 
     ░          ░  ░   ░     ░  ░   ░     
-                     ░                                          
+                     ░                                
 """
 
 vague_coloree = ""
