@@ -1,113 +1,129 @@
-# 🌊 Waver - Username Search Tool
+# 🌊 Waver — OSINT Username Scanner
 
-Un outil Python pour rechercher la présence d'un pseudonyme sur plusieurs plateformes en ligne.
-
-## 📋 Description
-
-Waver permet de scanner rapidement plusieurs sites web et réseaux sociaux pour vérifier si un nom d'utilisateur est présent sur ces plateformes. L'outil effectue des requêtes HTTP et enregistre les résultats dans un fichier texte.
-
-## ✨ Fonctionnalités
-
-- 🔍 Recherche simultanée sur 20+ plateformes
-- 💾 Sauvegarde automatique des résultats dans un fichier texte
-- 🎨 Interface colorée avec Rich
-- ⚡ Gestion des timeouts et redirections
-- 📊 Barre de progression en temps réel
-
-## 🎯 Plateformes supportées
-
-### Réseaux Sociaux
-- Instagram, TikTok, Twitter/X, Facebook
-- Snapchat, Reddit, Pinterest, LinkedIn
-
-### Tech & Dev
-- GitHub, GitLab, StackOverflow
-- DockerHub, Dev.to, TryHackMe
-
-### Gaming
-- Twitch, Steam, Chess.com, Roblox
-
-### Médias
-- YouTube, Spotify, SoundCloud, Medium
-
-## 📦 Installation
-
-### Prérequis
-- Python 3.7+
-- pip
-
-### Dépendances
-
-```bash
-pip install httpx rich
-```
-
-## 🚀 Utilisation
-
-```bash
-python waver.py
-```
-
-L'outil vous demandera d'entrer le pseudonyme à rechercher :
+> Outil de reconnaissance OSINT permettant de vérifier la présence d'un pseudo sur les principales plateformes sociales, avec détection des fuites de données associées.
 
 ```
-Entrez le nom de la cible : exemple_user
+     ...    .     ...                     _                                 
+  .~`"888x.!**h.-``888h.                 u                                  
+ dX   `8888   :X   48888>               88Nu.   u.                .u    .   
+'888x  8888  X88.  '8888>        u     '88888.o888c      .u     .d88B :@8c  
+'88888 8888X:8888:   )?""`    us888u.   ^8888  8888   ud8888.  ="8888f8888r 
+ `8888>8888 '88888>.88h.   .@88 "8888"   8888  8888 :888'8888.   4888>'88"  
+   `8" 888f  `8888>X88888. 9888  9888    8888  8888 d888 '88%"   4888> '    
+  -~` '8%"     88" `88888X 9888  9888    8888  8888 8888.+"      4888>      
+  .H888n.      XHn.  `*88! 9888  9888   .8888b.888P 8888L       .d888L .+   
+ :88888888x..x88888X.  `!  9888  9888    ^Y8888*""  '8888c. .+  ^"8888*"    
+ f  ^%888888% `*88888nx"   "888*""888"     `Y"       "88888%       "Y"      
+      `"**"`    `"**""      ^Y"   ^Y'                  "YP'                  
+
+                By https://github.com/0x94sd aka Keryan
 ```
 
-Les résultats seront affichés en temps réel et sauvegardés dans `exemple_user.txt`.
-
-## 📄 Format de sortie
-
-Les résultats sont enregistrés dans un fichier texte avec le format suivant :
-
-```
---- Scan du exemple_user ---
-[+] GitHub : https://github.com/exemple_user
-[+] Twitter/X : https://twitter.com/exemple_user
-[+] Instagram : https://www.instagram.com/exemple_user
-```
-
-## ⚙️ Configuration
-
-Pour ajouter de nouvelles plateformes, modifiez le dictionnaire `repertoire_sites` :
-
-```python
-repertoire_sites = {
-    "Nom_Plateforme": "https://exemple.com/{}",
-}
-```
-
-Le `{}` sera remplacé par le pseudonyme recherché.
-
-## ⚠️ Avertissements
-
-- **Usage légal uniquement** : Cet outil est destiné à des fins de recherche légitime (OSINT, vérification de disponibilité de pseudonymes, etc.)
-- Respectez les conditions d'utilisation de chaque plateforme
-- Certains sites peuvent bloquer les requêtes automatisées
-- Un timeout de 5 secondes est défini par défaut pour éviter les blocages
-
-## 🛠️ Limitations
-
-- Les résultats peuvent inclure des faux positifs (profils différents avec le même nom)
-- Certaines plateformes peuvent nécessiter une authentification
-- Les sites avec protection anti-bot peuvent ne pas être détectés
-
-## 📝 Licence
-
-Ce projet est fourni à des fins éducatives. Utilisez-le de manière responsable et éthique.
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! N'hésitez pas à :
-- Ajouter de nouvelles plateformes
-- Améliorer la détection
-- Corriger des bugs
-- Optimiser les performances
-
-## 📧 Support
-
-Pour toute question ou problème, n'hésitez pas à ouvrir une issue sur le dépôt du projet.
+**By [0x94sd](https://github.com/0x94sd) aka Keryan**
 
 ---
 
-**Note** : Cet outil effectue des recherches publiques sur des plateformes accessibles. Il ne contourne aucune mesure de sécurité et n'accède à aucune information privée.
+## ✨ Fonctionnalités
+
+- 🔍 Recherche de pseudo sur **20+ plateformes** (Tier 1 & Tier 2)
+- 📊 **Score de confiance** sur 80 points par résultat
+- 🔴 Affichage des **fuites de données connues** liées aux plateformes trouvées
+- 💾 Sauvegarde optionnelle des résultats dans un fichier `.txt`
+- 🎨 Interface CLI colorée avec barre de progression en temps réel
+- 🔄 Mode multi-recherche sans relancer le script
+
+---
+
+## 📋 Plateformes couvertes
+
+**Tier 1** (principales) : Instagram, TikTok, Twitter/X, Facebook, Snapchat, Reddit, Pinterest, LinkedIn, YouTube, Spotify, SoundCloud, Twitch, GitHub, Steam, Discord, Amazon, Shein, AliExpress, PayPal.Me, Vinted
+
+**Tier 2** (secondaires) : Dribbble, Letterboxd, Threads, Quora
+
+---
+
+## 🚀 Installation
+
+### 1. Cloner le repo
+```bash
+git clone https://github.com/0x94sd/waver
+cd waver
+```
+
+### 2. Installer les dépendances
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Télécharger la base de données WhatsMyName
+Le fichier `wmn-data.json` est requis et provient du projet [WhatsMyName](https://github.com/WebBreacher/WhatsMyName).
+
+```bash
+curl -o wmn-data.json https://raw.githubusercontent.com/WebBreacher/WhatsMyName/main/wmn-data.json
+```
+
+Ou télécharge-le manuellement et place-le **dans le même dossier** que `Waver.py`.
+
+---
+
+## ▶️ Utilisation
+
+```bash
+python Waver.py
+```
+
+Puis entre le pseudo de la cible lorsque demandé :
+
+```
+Entrez le nom de la cible : johndoe
+
+[+] Trouvé sur GitHub : https://github.com/johndoe [Score : 80/80 ✓]
+[+] Trouvé sur Reddit : https://www.reddit.com/user/johndoe [Score : 80/80 ✓]
+    [Fuite connue] : Fuite 2018 (emails + mots de passe hashés)
+```
+
+---
+
+## 📊 Système de score
+
+| Score | Couleur | Signification |
+|-------|---------|---------------|
+| 80/80 | 🟢 Vert | Compte détecté + confirmé (très fiable) |
+| 60/80 | 🟡 Jaune | Compte détecté mais résultat ambigu |
+
+> Un score < 50 est filtré et n'apparaît pas dans les résultats.
+
+---
+
+## 📁 Structure du projet
+
+```
+waver/
+├── Waver.py            # Script principal
+├── wmn-data.json       # Base de données WhatsMyName (à télécharger)
+├── requirements.txt    # Dépendances Python
+└── README.md
+```
+
+---
+
+## 📦 Dépendances
+
+```
+httpx
+rich
+```
+
+---
+
+## ⚠️ Avertissement légal
+
+Cet outil est destiné à un usage **éducatif et de recherche en cybersécurité uniquement**.  
+L'utilisation de cet outil sur des cibles sans consentement explicite peut être **illégale** selon la juridiction.  
+L'auteur décline toute responsabilité pour une utilisation malveillante.
+
+---
+
+## 📜 Licence
+
+MIT License — voir [LICENSE](LICENSE)
