@@ -16,7 +16,6 @@
  f  ^%888888% `*88888nx"   "888*""888"     `Y"       "88888%       "Y"      
       `"**"`    `"**""      ^Y"   ^Y'                  "YP'                  
 
-                By https://github.com/0x94sd aka Keryan
 ```
 
 **By [0x94sd](https://github.com/0x94sd) aka Keryan**
