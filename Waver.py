@@ -1,23 +1,22 @@
-from datetime import date
 import os
-import httpx
+import asyncio
+import contextlib
+import io
 from rich.console import Console
-from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn
-import json
+from modules.scanner import scanner, tier_1, tier_2
+from modules.display import afficher_resultats
+from modules.export import sauvegarder_resultats
+from modules.wildcard import generer_variantes
 
-Console = Console()
-
-def couleur_score(score):  # ← tout en haut, avant le while True
-    if score >= 65:
-        return f"[bold green]Score : {score}/80 ✓[/bold green]"
-    else:
-        return f"[bold yellow]Score : {score}/80 ~[/bold yellow]"
+os.system('chcp 65001 > nul')
+console = Console(highlight=False)
 
 
-while True:
-    os.system('cls' if os.name == 'nt' else 'cls')
-    
-    vague = r"""
+async def main():
+    while True:
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        vague = r"""
      ...    .     ...                     _                                 
   .~`"888x.!**h.-``888h.                 u                                  
  dX   `8888   :X   48888>               88Nu.   u.                .u    .   
@@ -32,149 +31,71 @@ while True:
       `"**"`    `"**""      ^Y"   ^Y'                  "YP'                                        
     
                 By https://github.com/0x94sd aka Keryan
-    """
-    
-    lignes = vague.split('\n')
-    vague_coloree = ""
-    for i, ligne in enumerate(lignes):
-        ratio = i / max(len(lignes) - 1, 1)
-        r = int(255 * (1 - ratio))
-        g = int(255 * (1 - ratio))
-        b = 255
-        vague_coloree += f"[rgb({r},{g},{b})]{ligne}[/rgb({r},{g},{b})]\n"
-    Console.print(vague_coloree)    
+        """
 
-    pseudo = Console.input("[rgb(100,100,255)]Entrez le nom de la cible : [/rgb(100,100,255)]").strip() #.strip() pour enlever les espaces avant et après le pseudo 
-
-    with open("wmn-data.json", "r", encoding="UTF-8") as f:
-        data = json.load(f)
-
-    tier_1 = {
-        "Instagram": "https://www.instagram.com/{}",
-        "TikTok": "https://www.tiktok.com/@{}",
-        "Twitter/X": "https://twitter.com/{}",
-        "Facebook": "https://www.facebook.com/{}",
-        "Snapchat": "https://www.snapchat.com/add/{}",
-        "Reddit": "https://www.reddit.com/user/{}",
-        "Pinterest": "https://www.pinterest.com/{}/",
-        "LinkedIn": "https://www.linkedin.com/in/{}",
-        "YouTube": "https://www.youtube.com/@{}",
-        "Spotify": "https://open.spotify.com/user/{}",
-        "SoundCloud": "https://soundcloud.com/{}",
-        "Twitch": "https://www.twitch.tv/{}",
-        "GitHub": "https://github.com/{}",
-        "Steam": "https://steamcommunity.com/id/{}",
-        "Discord": "https://discord.com/users/{}",
-        "Amazon": "https://www.amazon.com/gp/profile/amzn1.account.{}",
-        "Shein": "https://www.shein.com/profile/{}",
-        "AliExpress": "https://www.aliexpress.com/store/{}",
-        "PayPal.Me": "https://paypal.me/{}",
-        "Vinted": "https://www.vinted.fr/member/{}",
-    }
-
-    tier_2 = {
-        "Dribbble": "https://dribbble.com/{}",
-        "Letterboxd": "https://letterboxd.com/{}/",
-        "Threads": "https://www.threads.net/@{}",
-        "Quora": "https://www.quora.com/profile/{}",
-    }
-
-    breaches = {
-        "LinkedIn": "Fuite 2021 (~700M comptes exposés)",
-        "Twitter/X": "Fuite 2022 (~400M emails/numéros exposés)",
-        "Facebook": "Fuite 2021 (~533M comptes exposés)",
-        "Instagram": "Fuite 2019 (~49M profils scrappés)",
-        "Twitch": "Fuite 2021 (code source + données internes)",
-        "Spotify": "Fuite 2020 (~380M identifiants exposés)",
-        "Reddit": "Fuite 2018 (emails + mots de passe hashés)",
-        "GitHub": "Fuite 2023 (tokens OAuth exposés)",
-        "Discord": "Fuite 2023 (~760M emails via bot)",
-        "Steam": "Fuite 2011 (~35M comptes exposés)",
-        "AliExpress": "Fuite 2020 (~1.1M comptes exposés)",
-        "Shein": "Fuite 2022 (~39M comptes exposés)",
-        "Quora": "Fuite 2018 (~100M comptes exposés)",
-    }
-
-    def verifier_site(site_data, pseudo):
-        url = site_data['uri_check'].replace("{account}", pseudo)
-        response = httpx.get(url, headers=headers, timeout=10.0, follow_redirects=True)
+        lignes = vague.split('\n')
+        vague_coloree = ""
+        for i, ligne in enumerate(lignes):
+            ratio = i / max(len(lignes) - 1, 1)
+            r = int(255 * (1 - ratio))
+            g = int(255 * (1 - ratio))
+            b = 255
+            vague_coloree += f"[rgb({r},{g},{b})]{ligne}[/rgb({r},{g},{b})]\n"
+        console.print(vague_coloree)
         
-        score = 0
-        
-        # Critère principal : compte détecté selon WMN
-        if response.status_code == site_data['e_code'] and site_data['e_string'] in response.text:
-            score += 60
-            
-            # Bonus uniquement si le compte est déjà détecté
-            if site_data.get('m_string') and site_data['m_string'] not in response.text:
-                score += 20
-        
-        return score
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"} # Pour ne pas être bloqué a cause des firewalls
+        choix = console.input("[rgb(100,100,255)]Mode de recherche :\n\n[[white]1[/white][rgb(100,100,255)]] Pseudo\n\n[[white]2[/white][rgb(100,100,255)]] Prénom / Nom (wildcard)\n\n[[white]3[/white][rgb(100,100,255)]] Email\n\n> [/]").strip()
+        if choix == "1":
+            pseudo = console.input("[rgb(100,100,255)]Entrez le Pseudo de la cible : [/rgb(100,100,255)]").strip()
+            pseudos = [pseudo]
+            nom_fichier = pseudo
+        elif choix == "2":
+            prenom = console.input("[rgb(100,100,255)]Entrez le Prénom de la cible : [/rgb(100,100,255)]").strip()
+            nom = console.input("[rgb(100,100,255)]Entrez le NOM de la cible : [/rgb(100,100,255)]").strip()
+            pseudos = generer_variantes(prenom, nom)
+            nom_fichier = f"{prenom}_{nom}"
+            console.print(f"\n[rgb(100,100,255)][i]{len(pseudos)} variantes générées...[/i][/]\n")
+        elif choix == "3":
+            email = console.input("[rgb(100,100,255)]Entrez l'email de la cible : [/rgb(100,100,255)]").strip()
+            nom_fichier = email.split("@")[0]
+            pseudos = []
+        else:
+            continue
 
-    ficher = open(f"{pseudo}.txt", "a", encoding="utf-8")
-    ficher.write(f"\n--- Scan du {pseudo} ---\n")
-        
-    compte_trouvés = 0
+        if choix == "3":
+            from modules.email_scan import scanner_email
+            with contextlib.redirect_stderr(io.StringIO()):
+                resultats_email = await scanner_email(email)
+            tous_resultats = []
+            for r in resultats_email:
+                domain = r.get('domain', '')
+                url = f"https://{domain}" if domain else ''
+                console.print(f"[rgb(100,100,255)][[/][bold yellow]+[/][rgb(100,100,255)]] Trouvé sur[/] {r['name']} [rgb(100,100,255)]→[/] [underline]{url}[/underline]")
+                tous_resultats.append(f"[+] {r['name']} → {url}\n")
 
-    with Progress(
-            TextColumn("\n"), 
-            TextColumn("[rgb(100,100,255)]{task.description}[/]"),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            console=Console
-        ) as progress:
+        # Scan pseudo / wildcard
+        else:
+            tous_resultats = []
+            sites_cibles = list(tier_1.keys()) + list(tier_2.keys())
+            for pseudo in pseudos:
+                resultats_bruts = await scanner(pseudo)
+                scores = dict(resultats_bruts)
+                resultats, _ = afficher_resultats(scores, pseudo, sites_cibles)
+                tous_resultats.extend(resultats)
 
-        task = progress.add_task("Scan en cours...", total=len([s for s in data['sites'] if s['name'] in tier_1]))
-        
-        # Tier 1 - Plus de critères, donc score plus élevé nécessaire pour valider la présence du compte
-        for sites in data['sites']:
-            if sites["name"] in tier_1:
-                try:
-                    score = verifier_site(sites, pseudo)  # ← ne pas oublier
-                    if score >= 50:                        # ← ne pas oublier
-                        progress.console.print()
-                        progress.console.print(f"[rgb(100,100,255)][[/][bold yellow]+[/][rgb(100,100,255)]] Trouvé sur[/] {sites['name']} : {tier_1[sites['name']].format(pseudo)} [rgb(100,100,255)][[/]{couleur_score(score)}[rgb(100,100,255)]][/]")
-                        if sites['name'] in breaches:
-                            progress.console.print(f"    [rgb(100,100,255)][[/][bold yellow]Fuite connue[/][rgb(100,100,255)]] : {breaches[sites['name']]}")
-                            ficher.write(f"    [Fuite connue] : {breaches[sites['name']]}\n")
-                        ficher.write(f"[+] {sites['name']} : {tier_1[sites['name']].format(pseudo)}\n")
-                        compte_trouvés += 1
-                except Exception:
-                    pass
-                finally:
-                    progress.update(task, advance=1)
+        # Sauvegarde
+        sauvegarder = console.input("\n[rgb(100,100,255)]Sauvegarder les résultats ? (o/n) : [/]").strip().lower()
+        console.print()
 
-        # Tier 2 - Moins de critères, donc moins de score nécessaire pour valider la présence du compte
-        for sites in data['sites']:
-            if sites["name"] in tier_2:
-                try:
-                    score = verifier_site(sites, pseudo)
-                    if score >= 50:
-                        url_trouvée = sites['uri_check'].replace("{account}", pseudo)
-                        progress.console.print(f"[rgb(100,100,255)][[/][bold yellow]+[/][rgb(100,100,255)]] Trouvé sur[/] {sites['name']} : {url_trouvée} [rgb(100,100,255)][[/]{couleur_score(score)}[rgb(100,100,255)]][/]")
-                        if sites['name'] in breaches:
-                            progress.console.print(f"    [rgb(100,100,255)][[/][bold yellow]Fuite connue[/][rgb(100,100,255)]] : {breaches[sites['name']]}")
-                            ficher.write(f"    [Fuite connue] : {breaches[sites['name']]}\n")
-                        ficher.write(f"[+] {sites['name']} : {url_trouvée}\n")
-                        compte_trouvés += 1
-                except Exception:
-                    pass
+        if sauvegarder == "o":
+            sauvegarder_resultats(nom_fichier, tous_resultats)
+            console.print(f"[rgb(100,100,255)]Les résultats sont sauvegardés dans '{nom_fichier}.txt' et '{nom_fichier}.json'[/].")
+        else:
+            console.print("[rgb(100,100,255)]Résultats non sauvegardés.[/]")
 
-        if compte_trouvés == 0:
-            progress.console.print(f"[rgb(100,100,255)][[/][bold red]-[/][rgb(100,100,255)]] Aucun compte trouvé pour {pseudo}")
+        continuer = console.input("\n[rgb(100,100,255)]Nouvelle recherche ? (o/n) : [/rgb(100,100,255)]").strip().lower()
+        if continuer != "o":
+            break
 
-    sauvegarder = Console.input("\n[rgb(100,100,255)]Sauvegarder les résultats ? (o/n) : [/]").strip().lower()
-    Console.print()
-    
-    ficher.close()
-    if sauvegarder == "o":
-        Console.print(f"[rgb(100,100,255)]Les résultats sont sauvegardés dans '{pseudo}.txt'[/].")
-    else:
-        os.remove(f"{pseudo}.txt")
-        Console.print(f"[rgb(100,100,255)]Résultats non sauvegardés.[/]")
 
-    continuer = Console.input("\n[rgb(100,100,255)]Nouvelle recherche ? (o/n) : [/rgb(100,100,255)]").strip().lower()
-    if continuer != "o":
-        break
+asyncio.run(main())
